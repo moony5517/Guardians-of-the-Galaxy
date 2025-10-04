@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Comic</title>
+    <link rel="icon" href="logo.png" type="image/png">
+    <style>
+        /* ===========================
+           Body & Background
+        =========================== */
+        body {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            perspective: 1500px;
+            background: #111;
+        }
+
+        body::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: url("earth close.PNG") no-repeat center center/cover;
+            filter: blur(10px);
+            transform: scale(1.1);
+            z-index: -1;
+        }
+
+        /* ===========================
+           Navbar & Logo
+        =========================== */
+        .logo { height: 50px; }
+
+        .navbar {
+            position: absolute;
+            top: 15px;
+            left: 0;
+            width: 100%;
+            padding: 0 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: transparent;
+            z-index: 10;
+        }
+
+        .nav-links a {
+            margin-left: 12px;
+            padding: 6px 12px;
+            background: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 13px;
+            transition: background 0.3s;
+        }
+
+        .nav-links a:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        /* ===========================
+           Comic Pages
+        =========================== */
+        .comic-page {
+            position: relative;
+            width: 340px;
+            height: 453px;
+            display: none;
+            flex-direction: column;
+            background: white;
+            padding: 5px;
+            box-sizing: border-box;
+            transition: transform 0.6s ease, opacity 0.6s ease;
+            transform-origin: center right;
+            opacity: 0;
+        }
+
+        .comic-page.active {
+            display: flex;
+            opacity: 1;
+            transform: rotateY(0deg);
+            z-index: 2;
+        }
+
+        .comic-page.exiting {
+            transform: rotateY(-90deg);
+            opacity: 0;
+        }
+
+        /* ===========================
+           Panels
+        =========================== */
+        .panel {
+            position: relative;
+            flex: 1 1 auto;
+            min-height: 170px;
+            opacity: 0;
+            transition: opacity 0.6s ease-in-out;
+            border: 3px solid black;
+            margin-bottom: 4px;
+            box-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+            border-radius: 4px;
+            background: #000;
+            overflow: visible;
+        }
+
+        .panel:last-child { margin-bottom: 0; }
+        .panel.active { opacity: 1; }
+
+        .panel video,
+        .panel img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            border-radius: 4px;
+        }
+
+        .panel-row {
+            display: flex;
+            gap: 4px;
+            flex: 1 1 auto;
+            margin-bottom: 4px;
+        }
+
+        .panel-row .panel {
+            margin-bottom: 0;
+            flex: 1;
+        }
+
+        .panel-gif{
+            width: auto;
+            height: auto;
+            max-width: 100%;
+            max-height: 100%;
+            margin: 0 auto;
+        }
+
+        /* ===========================
+           Bubbles
+        =========================== */
+        .bubble {
+            position: absolute;
+            background: white;
+            padding: 6px;
+            border-radius: 8px;
+            display: none;
+            border: 1.5px solid black;
+            font-family: "Comic Sans MS", cursive, sans-serif;
+            font-size: 12px;
+            z-index: 10;
+        }
+
+        .bubble.show {
+            display: block;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* ===========================
+           Buttons & Page Counter
+        =========================== */
+        .next-btn, .back-btn {
+            position: absolute;
+            bottom: 35px;
+            background: #fff;
+            border: 2px solid black;
+            padding: 4px 8px;
+            font-size: 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: "Comic Sans MS", cursive, sans-serif;
+            box-shadow: 1px 1px 3px rgba(0,0,0,0.4);
+            transition: all 0.2s ease;
+            z-index: 20;
+        }
+
+        .next-btn {
+            right: 15px;
+        }
+
+        .back-btn {
+            left: 15px;
+            display: none;
+        }
+
+        .next-btn:hover, .back-btn:hover {
+            background: black;
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .page-counter {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: black;
+            background: white;
+            padding: 1px 4px;
+            border: 1.5px solid black;
+            border-radius: 3px;
+            font-family: "Comic Sans MS", cursive, sans-serif;
+            font-size: 12px;
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .page-counter.pop {
+            animation: pop 0.3s ease-in-out;
+        }
+
+        @keyframes pop {
+            0% { transform: translateX(-50%) scale(1); }
+            50% { transform: translateX(-50%) scale(1.3); }
+            100% { transform: translateX(-50%) scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <header class="navbar">
+        <img src="logo.png" alt="Cosmic Comic Logo" class="logo" />
+        <nav class="nav-links">
+            <a href="Cosmic Comic.html">Home</a>
+            <a href="page2.html">About Us</a>
+            <a href="https://www.nasa.gov/images/">Gallery</a>
+        </nav>
+    </header>
+
+    <!-- Page 1 -->
+    <div class="comic-page active" id="page1">
+        <div class="panel">
+            <img src="panel/Panel 1.jpg" alt="panel 1 photo">
+            <div class="bubble" data-sound="voice over/panel one bubble one.mp3" style="top:35px; left:-30px;">Oh hi! I didn't see you there, welcome</div>
+        </div>
+        <div class="panel">
+            <video src="panel/Panel 2.mp4" autoplay loop muted></video>
+            <div class="bubble" data-sound="voice over/panel two bubble one.mp3" style="top:-60px; left:70px;">I'm Venus, the-five year old doggy astronaut, weird I know but being a young astronaut is a privilege. I'm still training but I can fly spaceships.</div>
+            <div class="bubble"  data-sound="voice over/panel two bubble two.mp3" style="top:140px; left:-40px;">Well, how about I take you on a mini exploration trip and learn some new stuff together?</div>
+        </div>
+        <button class="back-btn">Back</button>
+        <button class="next-btn">Next</button>
+        <div class="page-counter"></div>
+    </div>
+
+    <!-- Page 2 -->
+    <div class="comic-page" id="page2">
+        <div class="panel">
+            <img src="panel/panel 3.gif" alt="panel 3 gif">
+            <div class="bubble" data-sound="voice over/panel three bubble one.mp3" style="top:-85px; left:-90px;">How about we start with the basics? Does anyone know what space weather is? Space weather is literally the weather but in space around Earth. Instead of rain or clouds or wind, it's made of stuff that comes from the sun like bursts of energy known as solar flares, fast moving tiny particles known as solar wind, hot large explosions of plasma and other radiations that the sun throws at us!</div>
+        </div>
+        <div class="panel">
+            <img src="panel/Panel 4.jpg" alt="panel 4 photo">
+            <div class="bubble" data-sound="voice over/panel four bubble one.mp3" style="top:-40px; left:-160px;">See these explosions on the surface our sun? These are the solar flares! It happens when the sun's strong magnetic energy suddenly bursts out, they often happen near sun spots. Those dark spots you see, hmm... think of it like the sun sneezing out a giant burst of light and energy into space affecting us all without caring</div>
+            <div class="bubble" data-sound="voice over/panel four bubble two.mp3" style="top:120px; left:-200px;">The Sun doesn't just shine... it breathes energy into space all the time</div>
+        </div>
+        <button class="back-btn">Back</button>
+        <button class="next-btn">Next</button>
+        <div class="page-counter"></div>
+    </div>
+
+    <!-- Page 3 -->
+    <div class="comic-page" id="page3">
+        <div class="panel">
+            <img src="panel/Panel 5.jpg" alt="panel 5 photo">
+            <div class="bubble" data-sound="voice over/panel five bubble one.mp3" style="top:-40px; left:-35px;">Why don't we go check those lights out? and get away from the sun's radiations, it's a health hazard for us.</div>
+        </div>
+        <div class="panel">
+            <video src="panel/Panel 6.mp4" autoplay loop muted></video>
+            <div class="bubble" data-sound="voice over/panel six bubble one.mp3" style="top:-70px; left:200px;">This is unusual. Oh no. the compass is giving inaccurate readings, lights out.. The solar activity is messing with my system</div>
+        </div>
+        <button class="back-btn">Back</button>
+        <button class="next-btn">Next</button>
+        <div class="page-counter"></div>
+    </div>
+
+    <!-- Page 4 -->
+    <div class="comic-page" id="page4">
+        <div class="panel-row">
+            <div class="panel">
+                <img src="panel/panel 7.1.jpg" alt="panel 7.1 photo">
+                <div class="bubble" data-sound="voice over/panel seven bubble one.mp3" style="top:-30px; left:-250px;">I guess the solar wind was too strong it made the compass malfunction. And my Internet is not working either well, back to our topic.. the solar wind are tiny particles blown into space by the sun. most of the time the earth's magnetic field shields us but sometimes when the solar wind is too strong it crashes our atmosphere, the result, this spectacular light show</div>
+            </div>
+            <div class="panel">
+                <img src="panel/Panel 7.2.jpg" alt="panel 7.2 photo">
+                <div class="bubble" data-sound="voice over/panel seven bubble two.mp3" style="top:-30px; left:150px;">And the occasional malfunction of our technology. satellites can glitch, GPS signals can twist and even power grids can shut down leaving cities in darkness.</div>
+            </div>
+        </div>
+        <div class="panel">
+            <img src="panel/Panel 7.3.gif" alt="panel 7.3 gif" class="panel-gif">
+            <div class="bubble" data-sound="voice over/panel eight bubble one.mp3" style="top:-30px; left:-300px;">A not so known fun fact is that space weather has existed for millions of years,we've noticed its effect more in recent years due to our heavy independence on technology. what makes space weather particularly interesting is the fact that we are still learning how it affects our daily lives showing how little we know about the universe around us</div>
+        </div>
+        <button class="back-btn">Back</button>
+        <button class="next-btn">Next</button>
+        <div class="page-counter"></div>
+    </div>
+
+    <!-- Page 5 -->
+    <div class="comic-page" id="page5">
+        <div class="panel">
+            <img src="panel/Panel 8.1.gif" alt="panel 8.1 gif">
+            <div class="bubble"  data-sound="voice over/final panel final bubble.mp3" style="top:80px; left:265px;">Well, luckily NASA engineers at headquarters remotely fixed this ship</div>
+        </div>
+        <div class="panel">
+            <img src="panel/Panel 8.2.gif" alt="panel 8.2 gif">
+        </div>
+        <button class="back-btn">Back</button>
+        <button class="next-btn">Next</button>
+        <div class="page-counter"></div>
+    </div>
+
+    <script>
+        const pages = document.querySelectorAll(".comic-page");
+        const totalPages = pages.length;
+        const pageStates = [];
+        let currentAudio = null;
+
+        function updatePageCounter(pageIndex) {
+            const counter = pages[pageIndex].querySelector(".page-counter");
+            counter.textContent = `Page ${pageIndex + 1} of ${totalPages}`;
+            counter.classList.remove("pop");
+            void counter.offsetWidth;
+            counter.classList.add("pop");
+        }
+
+        function resetPage(pageIndex) {
+            const state = pageStates[pageIndex];
+            const page = pages[pageIndex];
+
+            state.panelIndex = 0;
+            state.bubbleIndex = 0;
+            state.bubbles = state.panels[0].querySelectorAll(".bubble");
+
+            state.panels.forEach(panel => panel.classList.remove("active"));
+            page.querySelectorAll(".bubble").forEach(bubble => bubble.classList.remove("show"));
+            state.panels[0].classList.add("active");
+
+            const nextBtn = page.querySelector(".next-btn");
+            nextBtn.innerText = "Next";
+        }
+
+        pages.forEach((page, pageIndex) => {
+            const panels = page.querySelectorAll(".panel");
+            const nextBtn = page.querySelector(".next-btn");
+            const backBtn = page.querySelector(".back-btn");
+
+            const state = {
+                panelIndex: 0,
+                bubbleIndex: 0,
+                bubbles: [],
+                panels: panels
+            };
+            pageStates.push(state);
+
+            panels[0].classList.add("active");
+            state.bubbles = panels[0].querySelectorAll(".bubble");
+            updatePageCounter(pageIndex);
+
+            nextBtn.addEventListener("click", () => {
+                if (currentAudio) {
+                    currentAudio.pause();
+                    currentAudio = null;
+                }
+
+                if (state.bubbleIndex < state.bubbles.length) {
+                    const bubble = state.bubbles[state.bubbleIndex];
+                    bubble.classList.add("show");
+
+                    const soundFile = bubble.getAttribute("data-sound");
+                    if (soundFile) {
+                        currentAudio = new Audio(soundFile);
+                        currentAudio.play();
+                    }
+
+                    state.bubbleIndex++;
+                } else if (state.panelIndex < state.panels.length - 1) {
+                    const currentVideo = state.panels[state.panelIndex].querySelector("video");
+                    state.panelIndex++;
+                    state.panels[state.panelIndex].classList.add("active");
+                    const nextVideo = state.panels[state.panelIndex].querySelector("video");
+
+                    if (currentVideo) currentVideo.pause();
+                    if (nextVideo) nextVideo.play();
+
+                    state.bubbles = state.panels[state.panelIndex].querySelectorAll(".bubble");
+                    state.bubbleIndex = 0;
+                } else if (pageIndex < pages.length - 1) {
+                    const currentPage = pages[pageIndex];
+                    const nextPage = pages[pageIndex + 1];
+
+                    currentPage.classList.add("exiting");
+
+                    setTimeout(() => {
+                        currentPage.classList.remove("active", "exiting");
+                        nextPage.classList.add("active");
+
+                        const firstPanel = nextPage.querySelector(".panel");
+                        firstPanel.classList.add("active");
+
+                        updatePageCounter(pageIndex + 1);
+
+                        nextPage.querySelector(".back-btn").style.display = "block";
+                    }, 600);
+                } else {
+                    if (pageIndex === pages.length - 1 && state.bubbleIndex === state.bubbles.length && state.panelIndex === state.panels.length - 1) {
+                        nextBtn.innerText = "The End";
+                    }
+                }
+            });
+
+            backBtn.addEventListener("click", () => {
+                if (pageIndex > 0) {
+                    const currentPage = pages[pageIndex];
+                    const prevPage = pages[pageIndex - 1];
+
+                    currentPage.classList.add("exiting");
+
+                    setTimeout(() => {
+                        currentPage.classList.remove("active", "exiting");
+                        resetPage(pageIndex);
+                        resetPage(pageIndex - 1);
+
+                        prevPage.classList.add("active");
+
+                        updatePageCounter(pageIndex - 1);
+
+                        if (pageIndex - 1 === 0) {
+                            prevPage.querySelector(".back-btn").style.display = "none";
+                        }
+                    }, 600);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
